@@ -271,6 +271,22 @@ ngx_http_sorted_querystring_args_variable(ngx_http_request_t *r, ngx_http_variab
     return NGX_OK;
 }
 
+static ngx_int_t
+ngx_str_compare(const ngx_str_t *one, const ngx_str_t *two)
+{
+    ngx_int_t rc;
+
+    rc = ngx_strncmp(one->data, two->data, ngx_min(one->len, two->len));
+    if (rc == 0) {
+        if (one->len < two->len) {
+            rc = -1;
+        } else if (one->len > two->len) {
+            rc = 1;
+        }
+    }
+
+    return rc;
+}
 
 ngx_int_t
 ngx_http_sorted_querystring_cmp_parameters(const ngx_queue_t *one, const ngx_queue_t *two)
@@ -281,12 +297,9 @@ ngx_http_sorted_querystring_cmp_parameters(const ngx_queue_t *one, const ngx_que
     first  = ngx_queue_data(one, ngx_http_sorted_querystring_parameter_t, queue);
     second = ngx_queue_data(two, ngx_http_sorted_querystring_parameter_t, queue);
 
-    rc = ngx_strncasecmp(first->key.data, second->key.data, ngx_min(first->key.len, second->key.len));
+    rc = ngx_str_compare(&first->key, &second->key);
     if (rc == 0) {
-        rc = ngx_strncasecmp(first->complete.data, second->complete.data, ngx_min(first->complete.len, second->complete.len));
-        if (rc == 0) {
-            rc = -1;
-        }
+        rc = ngx_str_compare(&first->complete, &second->complete);
     }
 
     return rc;
